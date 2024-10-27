@@ -1,7 +1,9 @@
 ﻿using Blazored.LocalStorage;
+using HBlog.Contract.Common;
 using HBlog.Contract.DTOs;
 using HBlog.WebClient.Providers;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.Extensions.Logging;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
@@ -9,36 +11,31 @@ namespace HBlog.WebClient.Services
 {
     public interface IAuthService
     {
-        Task<UserDto> AuthenAsync(LoginDto loginDto);
-        Task GetBearerToken();
+        Task<AccountDto> AuthenAsync(LoginDto loginDto);
+        Task InjectToken();
         Task Logout(); 
     }
-    public class AuthService : IAuthService
+    public class AuthService(
+        HttpClient httpClient,
+        ILogger<PostClientService> logger,
+        ILocalStorageService localStorageService,
+        AuthenticationStateProvider authenticationStateProvider)
+        : BaseService(httpClient, logger), IAuthService
     {
-        private HttpClient _httpClient;
-        private ILocalStorageService _localStorageService;
-        private AuthenticationStateProvider _authenStateProvider;
-        public AuthService(HttpClient httpClient, ILocalStorageService localStorageService, AuthenticationStateProvider authenticationStateProvider)
-        {
-            _httpClient = httpClient;
-            _localStorageService = localStorageService;
-            _authenStateProvider = authenticationStateProvider;
-        }
-
-        public async Task<UserDto> AuthenAsync(LoginDto loginDto)
+        public async Task<AccountDto> AuthenAsync(LoginDto loginDto)
         {
             var result = await _httpClient.PostAsJsonAsync($"Account/login", loginDto);
-            var obj = await result.Content.ReadFromJsonAsync<UserDto>();
+            var obj = await result.Content.ReadFromJsonAsync<AccountDto>();
 
-            await _localStorageService.SetItemAsync("accessToken", obj!.Token);
+            await localStorageService.SetItemAsync(Constants.AccessToken, obj!.Token);
 
-            await ((ApiAuthStateProvider)_authenStateProvider).LoggedIn();
+            await ((ApiAuthStateProvider)authenticationStateProvider).LoggedIn();
 
             return obj;
         }
-        public async Task GetBearerToken()
+        public async Task InjectToken()
         {
-            var token = await _localStorageService.GetItemAsync<string>("accessToken");
+            var token = await localStorageService.GetItemAsync<string>(Constants.AccessToken);
             if (token != null)
             {
                 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -46,7 +43,7 @@ namespace HBlog.WebClient.Services
         }
         public async Task Logout()
         {
-            await ((ApiAuthStateProvider)_authenStateProvider).LoggedOut();
+            await ((ApiAuthStateProvider)authenticationStateProvider).LoggedOut();
         }
     }
 }

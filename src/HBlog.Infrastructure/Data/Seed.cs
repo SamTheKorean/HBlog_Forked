@@ -11,8 +11,8 @@ namespace HBlog.Infrastructure.Data
 {
     public class Seed
     {
-        private readonly static string _seedUserFilePath = "../HBlog.Infrastructure/Data/UserSeedData.json";
-        private readonly static string _seedPostFilePath = "../HBlog.Infrastructure/Data/PostSeedData.json";
+        private readonly static string _seedUserFilePath = "Data/UserSeedData.json";
+        private readonly static string _seedPostFilePath = "Data/PostSeedData.json";
         public static async Task SeedUsers(UserManager<User> userManager, RoleManager<AppRole> roleManager)
         {
             if(await userManager.Users.AnyAsync()) return;
@@ -78,14 +78,14 @@ namespace HBlog.Infrastructure.Data
 
             var tags = new[]
             {
-                new Tag { Id =1, Name = "C#", Slug = "dotnet", Desc = "dotnet programming", },
-                new Tag { Id =2, Name = "Go", Slug = "golang", Desc = "golang programming", },
-                new Tag { Id =3, Name = "Python", Slug = "Python", Desc = "Python", },
-                new Tag { Id =4, Name = "Azure", Slug = "azure", Desc = "Azure knowledge", },
-                new Tag { Id =5, Name = "Life Journey", Slug = "life", Desc = "My life", },
-                new Tag { Id =6, Name = "Book", Slug = "book", Desc = "Book I read" },
-                new Tag { Id =7, Name = "Travel", Slug = "travel", Desc = "All trips" },
-                new Tag { Id =8, Name = "Fundamental", Slug = "fundamental", Desc = "Basic implementation" },
+                new Tag { Name = "C#", Slug = "dotnet", Desc = "dotnet programming", },
+                new Tag { Name = "Go", Slug = "golang", Desc = "golang programming", },
+                new Tag { Name = "Python", Slug = "Python", Desc = "Python", },
+                new Tag { Name = "Azure", Slug = "azure", Desc = "Azure knowledge", },
+                new Tag { Name = "Life Journey", Slug = "life", Desc = "My life", },
+                new Tag { Name = "Book", Slug = "book", Desc = "Book I read" },
+                new Tag { Name = "Travel", Slug = "travel", Desc = "All trips" },
+                new Tag { Name = "Fundamental", Slug = "fundamental", Desc = "Basic implementation" },
             };
             foreach (var tag in tags)
             {
@@ -93,12 +93,11 @@ namespace HBlog.Infrastructure.Data
                 await context.SaveChangesAsync();
             }
         }
-
         public static async Task SeedPostTags(DataContext context)
         {
             if (await context.PostTags.AnyAsync()) return;
 
-            var postTags = new[] 
+            var postTags = new[]
             {
                 new PostTags { PostId = 1, TagId = 1,},
                 new PostTags { PostId = 1, TagId = 8,},

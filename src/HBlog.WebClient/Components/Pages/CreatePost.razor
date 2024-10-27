@@ -1,16 +1,19 @@
 ﻿@page "/posts/create"
 @inject IPostService postService
 @inject ICategoryService categoryService
+@inject ITagService tagService
 @inject NavigationManager navManager
-@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IToastService toastService
 @using HBlog.Domain.Entities
 @using HBlog.WebClient.Providers
 @using HBlog.WebClient.Services
 @using Microsoft.AspNetCore.Authorization
 
+
 @attribute [Authorize]
 <div class="container-xxl py-4">
     <h3>Create new post</h3>
+
     <div class="card-body">
         <EditForm Model="newPostDto" OnValidSubmit="CreateNewPost">
             <DataAnnotationsValidator />
@@ -26,6 +29,7 @@
             <div class="form-group">
                 <label for="description">Category</label>
                 <InputSelect class="select-element" @bind-Value="newPostDto.CategoryId">
+                    <option value="0">Select Category</option>
                     @foreach (var category in Categories)
                     {
                         <option value="@category.Id">@category.Title</option>
@@ -40,6 +44,26 @@
                 <label for="Content">Content</label>
                 <InputTextArea class="form-control" @bind-Value="newPostDto.Content" />
             </div>
+            
+            <div class="form-group">
+                <InputSelect class="form-select" style="width:200px" ValueExpression="() => newSelectedTag" Value="newSelectedTag" ValueChanged="HandleAddingTag" TValue="int?">
+                    @foreach (var tag in tags)
+                    {
+                        <option value="@tag.TagId">@tag.Name</option>
+                    }
+                </InputSelect>
+            </div>
+            <br />
+            <div>
+                @if (selectedTags is not null)
+                {
+                    @foreach (var tag in selectedTags)
+                    {
+                        <button @onclick="@(() => RemoveTag(tag))">@tag.Name</button>
+                    }
+                }
+            </div>
+
 
             <button type="submit" class="btn btn-primary btn-block">Create</button>
         </EditForm>
@@ -49,29 +73,50 @@
 
 
 @code {
-    PostCreateDto newPostDto = new PostCreateDto();
+    PostCreateDto newPostDto = new();
     [CascadingParameter]
     private Task<AuthenticationState> AuthState { get; set; }
 
     public System.Security.Claims.ClaimsPrincipal CurrentUser { get; set; }
-
+    private int? newSelectedTag { get; set; }
     private IEnumerable<Category> Categories { get; set; } = new List<Category>();
+    private IEnumerable<TagDto> tags = new List<TagDto>();
+    private List<TagDto> selectedTags = new();
+
     protected override async Task OnInitializedAsync()
     {
         Categories = await categoryService.GetCategories();
+        tags = await tagService.GetTags();
     }
-
+    public async Task HandleAddingTag(int? tagId)
+    {
+        var tag = tags.First(t => t.TagId == tagId);
+        if (selectedTags.Find(t => t.TagId == tagId) is null)
+        {           
+            selectedTags.Add(tag);
+        }
+        newSelectedTag = tagId;
+    }
     private async Task CreateNewPost()
     {
-        var id = newPostDto.CategoryId;
         var authState = await AuthState;
         var user = authState.User;
-        if (user.Identity.IsAuthenticated)
+        newPostDto.TagIds = selectedTags.Select(o => o.TagId).ToArray();
+        if (user.Identity!.IsAuthenticated)
         {
             var result = await postService.CreatePost(newPostDto);
             if (result)
+            {
+                toastService.ShowSuccess($"Post : {newPostDto.Title}, is created.");
                 navManager.NavigateTo("/posts");
 
+            }
+
         }
+    }
+
+    private void RemoveTag(TagDto tag)
+    {
+        selectedTags?.RemoveAll(t => t == tag);
     }
 }

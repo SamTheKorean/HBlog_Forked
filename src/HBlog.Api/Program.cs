@@ -12,6 +12,7 @@ public class Program
 {
     private static async Task Main(string[] args)
     {
+        Console.WriteLine("Current Env: " + Environment.GetEnvironmentVariable("Environment"));
         var builder = WebApplication.CreateBuilder(args);
         AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true); // TODO Might need to be removed and find solution for UTC TIme set issue..
         builder.Services.AddControllers();
@@ -48,17 +49,12 @@ public class Program
         builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
         var app = builder.Build();
-
-        if (builder.Environment.IsDevelopment())
-        {
-            app.UseDeveloperExceptionPage();
-            app.UseSwagger();
-            app.UseSwaggerUI();
-        }
+        app.UseDeveloperExceptionPage();
+        app.UseSwagger();
+        app.UseSwaggerUI();
         app.UseExceptionHandler("/Error");
         //app.UseCors(builder => builder.AllowAnyHeader().AllowAnyMethod().WithOrigins("https://localhost:4200"));
         app.UseCors(builder => builder.AllowAnyHeader().AllowAnyMethod().WithOrigins("https://localhost:7183", "http://localhost:5050"));
-
         app.UseAuthentication();
         app.UseAuthorization();
 
@@ -71,12 +67,17 @@ public class Program
             var context = services.GetRequiredService<DataContext>();
             var userManager = services.GetRequiredService<UserManager<User>>();
             var roleManager = services.GetRequiredService<RoleManager<AppRole>>();
-            await context.Database.MigrateAsync();
-            await Seed.SeedUsers(userManager, roleManager);
-            await Seed.SeedCategories(context);
-            await Seed.SeedPosts(context);
-            await Seed.SeedTags(context);
-            await Seed.SeedPostTags(context);
+            if (Environment.GetEnvironmentVariable("Environment") != "test")
+            {
+                await context.Database.MigrateAsync();
+                await Seed.SeedUsers(userManager, roleManager);
+                await Seed.SeedCategories(context);
+                await Seed.SeedPosts(context);
+                await Seed.SeedTags(context);
+                await Seed.SeedPostTags(context);
+                await context.Database.EnsureCreatedAsync();
+
+            }
         }
         catch (Exception ex)
         {

@@ -1,10 +1,11 @@
-﻿
-@if(Posts is not null)
+﻿@if (Posts is not null)
 {
-    @foreach (var post in Posts)
-    {
-        <PostCard Post="@post"></PostCard>
-    }
+    <div class="d-flex align-items-center flex-column">
+        @foreach (var post in Posts)
+        {
+            <PostCard Post="@post"></PostCard>
+        }
+    </div>
 }
 else
 {

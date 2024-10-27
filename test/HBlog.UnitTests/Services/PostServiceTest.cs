@@ -4,6 +4,7 @@ using HBlog.Contract.DTOs;
 using HBlog.Domain.Common.Params;
 using HBlog.Domain.Entities;
 using HBlog.Domain.Repositories;
+using HBlog.TestUtilities;
 using HBlog.UnitTests.Mocks.Repositories;
 using Moq;
 using NUnit.Framework;
@@ -61,7 +62,6 @@ namespace HBlog.UnitTests.Services
             var postDetails = await _postService.GetByIdAsync(1);
 
             Assert.That(postDetails.IsSuccess, Is.True);
-            //Assert.That(postDetails.Value, Is.InstanceOf(Type.));
             _mockPostRepo.Verify(x => x.GetById(postId));
         }
 
@@ -83,7 +83,8 @@ namespace HBlog.UnitTests.Services
                 Title = "New Post Create",
                 Desc = "New Post Desc",
                 LinkForPost = "https://github.com/hyunbin7303",
-                Type = "Programming"
+                Type = "Programming",
+                CategoryId = 1
             };
             _userRepositoryMock.Setup(x => x.GetUserByUsernameAsync(userName)).ReturnsAsync(new User { Id = 1, Email = "hyunbin7303@gmail.com", UserName = userName });
 

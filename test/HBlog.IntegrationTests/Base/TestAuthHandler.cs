@@ -9,12 +9,12 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 
-namespace HBlog.IntegrationTests
+namespace HBlog.IntegrationTests.Base
 {
     public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
     {
-        public TestAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock)
-            : base(options, logger, encoder, clock)
+        public TestAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder)
+            : base(options, logger, encoder)
         {
         }
 
@@ -25,7 +25,7 @@ namespace HBlog.IntegrationTests
             var ticket = new AuthenticationTicket(principal, "TestScheme");
 
             var result = AuthenticateResult.Success(ticket);
-            return Task.FromResult(result); 
+            return Task.FromResult(result);
         }
     }
 }

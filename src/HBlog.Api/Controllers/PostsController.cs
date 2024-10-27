@@ -65,8 +65,19 @@ namespace HBlog.Api.Controllers
         {
             var postDetails = await _postService.GetByIdAsync(id);
             return (await _postService.GetByIdAsync(id)).IsSuccess ? 
-                    (ActionResult<PostDisplayDetailsDto>)Ok(postDetails.Value) : 
-                    (ActionResult<PostDisplayDetailsDto>)NotFound(postDetails.Message);
+                    Ok(postDetails.Value) : 
+                    NotFound(postDetails.Message);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("posts/title-contains")]
+        public async Task<ActionResult<PostDisplayDto>> GetPostsByTitleContains(string title)
+        {
+            if (string.IsNullOrWhiteSpace(title)) return BadRequest("Search title string cannot be empty.");
+            var posts =  await _postService.GetPostsTitleContains(title);
+            return posts.IsSuccess
+                ? Ok(posts.Value)
+                : NotFound(posts.Message);
         }
 
         [HttpPut("posts")]
@@ -85,7 +96,7 @@ namespace HBlog.Api.Controllers
             return NoContent();
         }
 
-        [HttpPut("posts/{postId}/AddTag")] 
+        [HttpPut("posts/{postId}/Tags")] 
         public async Task<IActionResult> AddTag(int postId, [FromBody]int tagId)
         {
             if (postId == 0 || tagId == 0)

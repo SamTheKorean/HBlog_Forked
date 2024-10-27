@@ -6,7 +6,6 @@
 @inject ICategoryService categoryService
 @inject ITagService tagService
 @inject NavigationManager navManager
-@inject AuthenticationStateProvider AuthenticationStateProvider
 
 @attribute [Authorize]
 <div class="container-xxl py-5">
@@ -41,10 +40,10 @@
             <div class="form-group">
 
                 <InputSelect class="form-select" style="width:200px"
-                             ValueExpression="@(() => newSelectedTag)"
-                             Value="@newSelectedTag"
-                             ValueChanged="((TagDto value) => HandleAddingTag(value))">
-
+                             ValueExpression="() => newSelectedTag"
+                             Value="newSelectedTag"
+                             ValueChanged="HandleAddingTag"
+                             TValue="int?">
                     @foreach (var tag in tags)
                     {
                         <option value="@tag.TagId">@tag.Name</option>
@@ -53,9 +52,9 @@
             </div>
             <br />
             <div>
-                @if (editTags is not null)
+                @if (selectedTags is not null)
                 {
-                    @foreach (var tag in editTags)
+                    @foreach (var tag in selectedTags)
                     {
                         <button @onclick="@(() => RemoveTag(tag))">@tag.Name</button>
                     }
@@ -84,17 +83,16 @@
     [CascadingParameter]
     private Task<AuthenticationState> AuthState { get; set; }
 
-    public int tagNumber;
-    private TagDto newSelectedTag;
+    private int? newSelectedTag { get; set; }
     private bool isVisible { get; set; }
     private IEnumerable<Category> Categories = new List<Category>();
     private IEnumerable<TagDto> tags = new List<TagDto>();
-    private List<TagDto> editTags = new();
+    private List<TagDto> selectedTags = new();
 
     protected override async Task OnInitializedAsync()
     {
         postView = await postService.GetPostDetails(PostId.Value);
-        editTags = postView.Tags.ToList();
+        selectedTags = postView.Tags.ToList();
         Categories = await categoryService.GetCategories();
         tags = await tagService.GetTags();
     }
@@ -111,29 +109,28 @@
                     Desc = postView.Desc,
                     Content = postView.Content,
                     Type = postView.Type,
-                    LinkForPost = postView.LinkForPost ?? string.Empty,
+                    CategoryId = postView.CategoryId,
+                    LinkForPost = postView.LinkForPost,
+                    TagIds = selectedTags.Select(o => o.TagId).ToArray()
                 };
             var result = await postService.UpdatePost(postUpdateDto);
-            result = await postService.AddTagInPost(PostId.Value, tagNumber);
             if (result)
                 navManager.NavigateTo($"/posts/{postUpdateDto.Id}");
         }
 
     }
 
-    public async Task HandleAddingTag(TagDto tag)
+    public async Task HandleAddingTag(int? tagId)
     {
-        if (editTags?.Find(t => t.TagId == tag.TagId) is null)
-        {
-            editTags?.Add(tag);
+        var tag = tags.First(t => t.TagId == tagId);
+        if (selectedTags.Find(t => t.TagId == tagId) is null)
+        {           
+            selectedTags.Add(tag);
         }
-        // if (editTags.Where(pt => pt.TagId == tagId).Count() == 0)
-        // {
-        //     postView = await postService.GetPostDetails(PostId.Value);
-        // }
+        newSelectedTag = tagId;
     }
     private void RemoveTag(TagDto tag)
     {
-        editTags?.RemoveAll(t => t == tag);
+        selectedTags?.RemoveAll(t => t == tag);
     }
 }

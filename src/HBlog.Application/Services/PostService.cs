@@ -70,6 +70,12 @@ public class PostService : BaseService, IPostService
         post.User = user;
         post.UserId = user.Id;
         post.Status = PostStatus.Active;
+        if (createDto.TagIds.Length > 0)
+        {
+            post.PostTags = new List<PostTags>();
+            foreach (var tagId in createDto.TagIds)
+                post.PostTags.Add(new PostTags { Post = post, TagId = tagId });
+        }
         _postRepository.Add(post);
         await _postRepository.SaveChangesAsync();
         return ServiceResult.Success(msg: $"Post Id:{post.Id}");
@@ -101,6 +107,13 @@ public class PostService : BaseService, IPostService
         return _mapper.Map<IEnumerable<PostDisplayDto>>(posts);
     }
 
+    public async Task<ServiceResult<IEnumerable<PostDisplayDto>>> GetPostsTitleContains(string title)
+    {
+        
+        var posts = await _postRepository.GetPostsTitleContainsAsync(title.ToLower());
+        return ServiceResult.Success(_mapper.Map<IEnumerable<PostDisplayDto>>(posts));
+    }
+
     public async Task<ServiceResult<IEnumerable<PostDisplayDto>>> GetPostsByTagSlug(string tagSlug)
     {
         var tags = await _tagRepository.FindbySlug(tagSlug);
@@ -116,7 +129,7 @@ public class PostService : BaseService, IPostService
 
     public async Task<ServiceResult> UpdatePost(PostUpdateDto updateDto)
     {
-        Post post = await _postRepository.GetById(updateDto.Id);
+        Post post = await _postRepository.GetPostDetails(updateDto.Id);
         if (post == null || post.Status == PostStatus.Removed)
             return ServiceResult.Fail(msg: "Post does not exist.");
 
@@ -125,7 +138,11 @@ public class PostService : BaseService, IPostService
         post.Content = updateDto.Content;
         post.Type = updateDto.Type;
         post.LinkForPost = updateDto.LinkForPost;
+        post.CategoryId = updateDto.CategoryId;
         post.LastUpdated = DateTime.UtcNow;
+        post.PostTags.Clear();
+        foreach (var tagId in updateDto.TagIds)
+            post.PostTags.Add(new PostTags { Post = post, TagId = tagId });
 
         await _postRepository.UpdateAsync(post);
         return ServiceResult.Success();

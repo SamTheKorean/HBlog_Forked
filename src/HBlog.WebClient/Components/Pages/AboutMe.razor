@@ -1,6 +1,33 @@
 ﻿@page "/AboutMe"
+@using HBlog.WebClient.Services
+@inject UserClientService userService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<div class="container mt-5">
+    <div class="row">
+        @foreach (var item in Users)
+        {
+            <div class="col-md-4 mb-4">
+                <Card >
+                    <CardBody>
+                        <CardTitle>@item.KnownAs</CardTitle>
+                        <CardText>@item.Introduction</CardText>
+                    </CardBody>
+                </Card>
+            </div>
+        }
+    </div>
+</div>
+
 
 
 @code {
 
+    private IEnumerable<UserDto>? Users { get; set; } = new List<UserDto>();
+
+    protected async override Task OnInitializedAsync()
+    {
+        var user = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        Users = await userService.GetUsers();
+    }
 }
